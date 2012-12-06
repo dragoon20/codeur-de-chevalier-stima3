@@ -4,12 +4,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
-import java.util.TreeSet;
 
 public class Dict {
 
@@ -52,11 +53,11 @@ public class Dict {
 		{
 			// KMP
 			// creating KMP table
-			int total_banding = 0;
+			int total_kata = 0;
 			int tempmap[][] = new int[kumpulan.length][];
 			for (int i=0;i<kumpulan.length;++i)
 			{
-				total_banding += kumpulan[i].length();
+				total_kata += kumpulan[i].length();
 				tempmap[i] = new int[kumpulan[i].length()];
 				if (kumpulan[i].length() > 0)
 				{
@@ -81,58 +82,79 @@ public class Dict {
 					}
 				}
 			}
+			boolean supercheck = true;
 			for(String dict : Answer.keySet())
 			{
 				int total = 0;
+				int total_banding = 0;
+				String [] temp2 = dict.split(" ");
+				for (int i=0;i<temp2.length;++i)
+					total_banding += temp2[i].length();
 				for (int i=0;i<kumpulan.length;++i)
 				{
 					int m = 0;
 					int j = 0;
 					int max = 0;
 					boolean check = true;
-					while ((check) && (m+j < dict.length()))
+					
+					if (kumpulan[i].length() > 0)
 					{
-						if (kumpulan[i].charAt(j)==dict.charAt(m+j))
+						while ((check) && (j < dict.length()))
 						{
-							if (j==dict.length()-1)
+							if(kumpulan[i].charAt(m)==dict.charAt(j))
 							{
-								max = dict.length();
-								check = false;
+								j++;
+						        m++;
 							}
-							j++;
+							if (m == kumpulan[i].length())
+						    {
+						        max = kumpulan[i].length();
+						        check = false;
+						    }
+							else if ((j < dict.length()) && (kumpulan[i].charAt(m)!=dict.charAt(j)))
+							{
+								if (m != 0)
+									m = tempmap[i][m-1];
+								else
+									j = j+1;
+							}
 						}
-						else
-						{
-							if (j > max)
-								max = j;
-							m = m + j - tempmap[i][j];
-							j = tempmap[i][j];
-						}
+						total += max;
 					}
-					total += max;
 				}
-				if (((double)total/(double)total_banding) > (double)0.5)
+				if (((double)total/(double)total_banding) > (double)0.9)
 				{
-					result.put(dict, new Double(((double)total/(double)total_banding)));
+					if (total_kata <= total_banding)
+					{
+						result.put(dict, new Double(((double)total/(double)total_banding)));
+						supercheck = false;
+					}
+				}
+				else if ((supercheck) && (((double)total/(double)total_banding) > (double)0.5))
+				{
+					if (total_kata <= total_banding)
+					{
+						result.put(dict, new Double(((double)total/(double)total_banding)));
+					}
 				}
 			}
 		}
 		else if (flag==1)
 		{
 			// Boyer Moore
-			int total_banding = 0;
+			int total_kata = 0;
 			int tempmap[][] = new int[kumpulan.length][];
 			int tempmap2[][] = new int[kumpulan.length][];
 			
 			// creating Boyer Moore char table
 			for (int i=0;i<kumpulan.length;++i)
 			{
-				total_banding += kumpulan[i].length();
+				total_kata += kumpulan[i].length();
 				tempmap[i] = new int[256];
 				for (int j=0;j<tempmap[i].length;++j)
 					tempmap[i][j] = kumpulan[i].length();
 				for (int j=0;j<kumpulan[i].length() - 1;++j)
-					tempmap[i][kumpulan[i].charAt(j)] = kumpulan[i].length() - 1 - i;
+					tempmap[i][kumpulan[i].charAt(j)] = kumpulan[i].length() - 1 - j;
 			}
 			
 			// creating Boyer Moore scan offset table
@@ -167,55 +189,88 @@ public class Dict {
 				}
 			}
 			
+			boolean supercheck = true;
 			for(String dict : Answer.keySet())
 			{
+				int total_banding = 0;
 				int total = 0;
+				String [] temp2 = dict.split(" ");
+				for (int i=0;i<temp2.length;++i)
+					total_banding += temp2[i].length();
 				for (int i=0;i<kumpulan.length;++i)
 				{
 					int max = 0;
-					for (int j = kumpulan[i].length() - 1, k; j < dict.length();) 
+			    	boolean check = true;
+					int j = kumpulan[i].length() - 1, k; 
+					while ((check)&&(j < dict.length()))
 				    {
-				    	boolean check = true;
 				    	k = kumpulan[i].length() - 1;
-						while ((check)&&(kumpulan[i].charAt(k) == dict.charAt(j)))
+						while ((check) && (kumpulan[i].charAt(k) == dict.charAt(j)))
 				    	{
 				    		if (k == 0)
 				    			check = false;
-				    		// i += needle.length - j; // For naive method
-				    		j += Math.max(tempmap2[i][kumpulan[i].length() - 1 - k], tempmap[i][dict.charAt(j)]);
 				    		--j;
 				    		--k;
 				    	}
-						if (kumpulan[i].length() - 1 - k > max)
-							max = kumpulan[i].length() - 1 - k;
+						// i += needle.length - j; // For naive method
+						if (check)
+						{
+							j += Math.max(tempmap2[i][kumpulan[i].length() - 1 - k], tempmap[i][dict.charAt(j)]);
+						}
+						else
+							max = kumpulan[i].length();
 				    }
 					total += max;
 				}
-				if (((double)total/(double)total_banding) > (double)0.5)
+
+				if (((double)total/(double)total_banding) > (double)0.9)
 				{
-					result.put(dict, new Double(((double)total/(double)total_banding)));
+					if (total_kata <= total_banding)
+					{
+						supercheck = false;
+						result.put(dict, new Double(((double)total/(double)total_banding)));
+					}
+				}
+				else if ((supercheck) && (((double)total/(double)total_banding) > (double)0.5))
+				{
+					if (total_kata <= total_banding)
+					{
+						result.put(dict, new Double(((double)total/(double)total_banding)));
+					}
 				}
 			}
 		}
 		
+		List<Map.Entry<String, Double>> finalresult = new ArrayList<Map.Entry<String,Double>>();
 		// Returning result
-		if (result.size() > 3)
-			result = sortHashMap(result);
+		finalresult = sortHashMap(result);
 		
 		StringBuilder output = new StringBuilder();
-		if (result.size() == 1)
+		if (finalresult.size() == 1)
 		{
-			for (String temps: result.keySet())
-				output.append(Answer.get(temps));
+			for (Map.Entry<String, Double> temps: finalresult)
+				output.append(Answer.get(temps.getKey()));
 		}
-		else
+		else if (finalresult.size() > 1)
 		{
-			for (String temps: result.keySet())
+			int count = 0;
+			while ((count < finalresult.size()) && (count<3))
 			{
-				output.append(temps);
-				output.append("<br />");
+				Map.Entry<String, Double> pairs = finalresult.get(count);
+				if (pairs.getValue().equals((double)1))
+				{
+					output.append(Answer.get((String)pairs.getKey()));
+					count = 3;
+				}
+				else
+				{
+					output.append((String)pairs.getKey());
+					output.append("<br />");
+					count++;
+				}
 			}
 		}
+		
 		return output.toString();
 	}
 	
@@ -229,7 +284,7 @@ public class Dict {
 			
 			while (scan.hasNextLine())
 			{
-				Synonym.put(scan.nextLine(), scan.nextLine());
+				Answer.put(scan.nextLine().toLowerCase(), scan.nextLine().toLowerCase());
 			}
 			
 			scan.close();
@@ -253,7 +308,7 @@ public class Dict {
 
 			while (scan.hasNextLine())
 			{
-				Answer.put(scan.nextLine(), scan.nextLine());
+				Synonym.put(scan.nextLine().toLowerCase(), scan.nextLine().toLowerCase());
 			}
 			
 			scan.close();
@@ -277,7 +332,7 @@ public class Dict {
 
 			while (scan.hasNextLine())
 			{
-				Stop_Words.add(scan.nextLine());
+				Stop_Words.add(scan.nextLine().toLowerCase());
 			}
 			
 			scan.close();
@@ -291,24 +346,21 @@ public class Dict {
 		}
 	}
 	
-	private HashMap<String, Double> sortHashMap(HashMap<String, Double> input)
+	private List<Map.Entry<String, Double>> sortHashMap(HashMap<String, Double> input)
 	{
-	    Map<String, Double> tempMap = new HashMap<String, Double>();
-	    for (String wsState : input.keySet())
-	    {
-	        tempMap.put(wsState,input.get(wsState));
-	    }
+		List<Map.Entry<String, Double>> list = new ArrayList<Map.Entry<String, Double>>(input.entrySet());
+	    
+		Collections.sort(list, new Comparator<Map.Entry<String, Double>>() {
 
-	    List<String> mapKeys = new ArrayList<String>(tempMap.keySet());
-	    List<Double> mapValues = new ArrayList<Double>(tempMap.values());
-	    HashMap<String, Double> sortedMap = new LinkedHashMap<String, Double>();
-	    TreeSet<Double> sortedSet = new TreeSet<Double>(mapValues);
-	    Object[] sortedArray = sortedSet.descendingSet().toArray();
-	    int size = sortedArray.length;
-	    for (int i=0; i<size; i++)
-	    {
-	        sortedMap.put(mapKeys.get(mapValues.indexOf(sortedArray[i])), (Double)sortedArray[i]);
-	    }
-	    return sortedMap;
+			@Override
+			public int compare(Entry<String, Double> arg0,
+					Entry<String, Double> arg1) {
+				// TODO Auto-generated method stub
+				return arg1.getValue().compareTo(arg0.getValue());
+			}
+		});
+
+	    return list;
 	}
 }
+

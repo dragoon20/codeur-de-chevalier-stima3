@@ -1,6 +1,5 @@
 package chat.bot;
 
-import java.io.InputStream;
 import java.util.Scanner;
 
 public class Main {
@@ -12,8 +11,20 @@ public class Main {
 		// TODO Auto-generated method stub
 		
 		Scanner input = new Scanner(System.in);
+		Dict dict = new Dict();
 		
-		System.out.print("ampas");
+		boolean check = true;
+		while (check)
+		{
+			String masukan = input.nextLine();
+			System.out.println(masukan);
+			if (masukan.equals("quit"))
+				check = false;
+			else
+				System.out.println(dict.CheckAnswer(masukan.toLowerCase(), 0));
+		}
+		System.out.println("Program exited.");
+		input.close();
 	}
 
 }
